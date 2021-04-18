@@ -4,7 +4,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-SERVER = "192.168.1.9"
+SERVER = "192.168.1.4"
 ADDR = (SERVER, PORT)
 
  #create new socket and connect to server
@@ -23,5 +23,27 @@ def send(msg):
 
     return client.recv(2048).decode(FORMAT)
     
-# main
-#send(DISCONNECT_MESSAGE)
+def receiveFile (fileAddr):
+    file = open(fileAddr, 'wb')
+    file_data = client.recv(2048).decode(FORMAT)
+    file.write(file_data)
+    file.close()
+    print("File has been received successfully.")
+
+def receiveList(result_length): #no dg doi nhan dc cau gi do de cho vap length
+    result = [[]]
+    temp = []
+
+    for i in range(result_length):
+        for j in range(5):
+            received_data = send("msg received")
+            print(received_data + "\n")
+            temp.append(received_data)
+            print(temp)
+        result.append(temp)
+        print(result)
+        temp.clear()
+        print(temp)
+        
+    
+    return result

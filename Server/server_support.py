@@ -1,6 +1,8 @@
 import socket 
 import threading
 
+from sqlServerConn import *
+
 #define
 HEADER = 64
 PORT = 5050
@@ -44,7 +46,7 @@ def check_log_in(conn):
     username_length = int (username_length)
     username = conn.recv(username_length).decode(FORMAT)
     print("user: " + username)
-    conn.send(" ".encode(FORMAT))
+    conn.send("msg received".encode(FORMAT))
     
     password_length = conn.recv(HEADER).decode(FORMAT)
     password_length = int (password_length)
@@ -56,8 +58,10 @@ def check_log_in(conn):
     #kiem tra xem co trong ACCOUNT hay khong
         if username in ACCOUNT and ACCOUNT[username] == password:
             conn.send("LOG IN SUCCEED".encode(FORMAT))
+            return True
         else:
             conn.send("LOG IN FAILED".encode(FORMAT))
+            return False
     else: conn.send("BYE".encode(FORMAT))
 
 #SIGNUP
@@ -69,7 +73,7 @@ def check_sign_up(conn):
     username_length = int (username_length)
     username = conn.recv(username_length).decode(FORMAT)
     print("user: " + username)
-    conn.send(" ".encode(FORMAT))
+    conn.send("msg received".encode(FORMAT))
     
     password_length = conn.recv(HEADER).decode(FORMAT)
     password_length = int (password_length)
@@ -87,5 +91,68 @@ def check_sign_up(conn):
             with open(ACCOUNT_PATH, "a") as f: 
                 f.writelines("\n" + username + "\n" + password)
         conn.send("SIGN UP SUCCEED".encode(FORMAT))
-        print (ACCOUNT)
-    else: conn.send("BYE".encode(FORMAT))
+        return True
+    else: 
+        conn.send("BYE".encode(FORMAT))
+        return False
+
+def handle_cmd(conn):
+    #receive msg from client
+    cmd_length = conn.recv(HEADER).decode(FORMAT)
+    cmd_length = int(cmd_length)
+    cmd = conn.recv(cmd_length).decode(FORMAT)
+
+    #execute the cmd
+    cmd_split = cmd.split(' ')
+
+    result = []
+
+    if cmd_split[0] == "F_ID":
+        result = selectByID(cmd_split[1])
+    if cmd_split[0] == "F_NAME":
+        result = selectByName(cmd_split[1])
+    if cmd_split[0] == "F_AUTHOR":
+        result = selectByAuthor(cmd_split[1])
+    if cmd_split[0] == "F_TYPE":
+        result = selectByType(cmd_split[1])
+
+    #send number of result to client
+    temp = result.fetchall()
+    result_length = len(temp)
+    print(result_length)
+    conn.send((str(result_length)).encode(FORMAT))
+    print(result_length)
+    #send each row of the result list to client
+    for row in result:
+        send_row(conn, row)
+
+#function to send 1 row of result to client
+def send_row(conn, row):
+
+    conn.send((row.ID).encode(FORMAT))
+    print("send success")
+
+    cmd_length = conn.recv(HEADER).decode(FORMAT)
+    cmd_length = int(cmd_length)
+    cmd = conn.recv(cmd_length).decode(FORMAT)
+    conn.send((row.NAMEOFBOOK).encode(FORMAT))
+    print("send success")
+
+    cmd_length = conn.recv(HEADER).decode(FORMAT)
+    cmd_length = int(cmd_length)
+    cmd = conn.recv(cmd_length).decode(FORMAT)
+    conn.send((row.NAMEOFAUTHOR).encode(FORMAT))
+    print("send success")
+
+    cmd_length = conn.recv(HEADER).decode(FORMAT)
+    cmd_length = int(cmd_length)
+    cmd = conn.recv(cmd_length).decode(FORMAT)
+    conn.send(str(row.PUBLISHYEAR).encode(FORMAT))
+    print("send success")
+
+    cmd_length = conn.recv(HEADER).decode(FORMAT)
+    cmd_length = int(cmd_length)
+    cmd = conn.recv(cmd_length).decode(FORMAT)
+    conn.send((row.TYPEOFBOOK).encode(FORMAT))
+    print("send success")
+
