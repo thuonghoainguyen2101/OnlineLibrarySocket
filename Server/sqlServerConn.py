@@ -4,29 +4,25 @@ def selectByID(value):
     conn = connect_to_SQL()
     cursor = conn.cursor()
     cmd = "SELECT * FROM BOOK WHERE ID = ?"
-    cursor.execute(cmd, value)
-    return cursor
+    return cursor.execute(cmd, value)
 
 def selectByName(value):
     conn = connect_to_SQL()
     cursor = conn.cursor()
     cmd = "SELECT * FROM BOOK WHERE NAMEOFBOOK = ?"
-    cursor.execute(cmd, value)
-    return cursor
+    return cursor.execute(cmd, value)
 
 def selectByType(value):
     conn = connect_to_SQL()
     cursor = conn.cursor()
     cmd = "SELECT * FROM BOOK WHERE NAMEOFAUTHOR = ?"
-    cursor.execute(cmd, value)
-    return cursor
+    return cursor.execute(cmd, value)
 
 def selectByAuthor(value):
     conn = connect_to_SQL()
     cursor = conn.cursor()
     cmd = "SELECT * FROM BOOK WHERE TYPEOFBOOK = ?"
-    cursor.execute(cmd, value)
-    return cursor
+    return cursor.execute(cmd, value)
 
 def connect_to_SQL():
     return pyodbc.connect(
@@ -36,3 +32,23 @@ def connect_to_SQL():
             "Database=LIBRARYDB;"
             "Trusted_Connection=yes;"
         )
+
+cursor = selectByID("004")
+for row in cursor:
+    print("aaaa")
+    print(row)
+
+cursor = selectByName("Technical Writing For Dummies")
+for row in cursor:
+    print("aaaa")
+    print(row)
+
+cursor = selectByAuthor("Maggie Hamand")
+for row in cursor:
+    print("aaaa")
+    print(row)
+
+cursor = selectByType("STUDY")
+for row in cursor:
+    print("aaaa")
+    print(row)

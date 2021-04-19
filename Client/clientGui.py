@@ -3,6 +3,9 @@ from tkinter.ttk import *
 from tkinter import messagebox
 import tkinter
 
+import json
+
+
 from client import *
 
 def center(toplevel):
@@ -15,6 +18,7 @@ def center(toplevel):
     size = tuple(int(_) for _ in toplevel.geometry().split('+')[0].split('x'))
     x = screen_width/2 - size[0]/2
     y = screen_height/2 - size[1]/2
+
 
 def handleClosing(window):
      if messagebox.askokcancel("Quit", "Do you want to disconnect?"):
@@ -35,7 +39,7 @@ def handleSignUpButton(window):
 def choiceWindow():
     window = Tk()
     window.title("Client's choice")
-    window.geometry("500x500")
+    window.geometry("1000x600")
     center(window)
 
     logInButton = Button(window, text = "Click here to log in", command = lambda: handleLogInButton(window))
@@ -57,7 +61,11 @@ def handleAccountClosing(window):
 
 def handleSendButton(window, username, password):
     send(username)
-    result = send(password)
+    #print(receive())
+    send(password)
+    #print(receive())
+    result = receive()
+    print(result)
 
     if result == "LOG IN SUCCEED":
         messagebox.showinfo("Notification", "Log in Successful")
@@ -82,8 +90,10 @@ def handleSendButton(window, username, password):
 def inputAccountWindow():
         window = Tk()
         window.title("Client's input")
-        window.geometry("500x500")
+        window.geometry("1000x600")
         center(window)
+
+        print(receive())
 
         usernameLabel = tkinter.Label(window, text="Username: ")
         usernameLabel.pack()
@@ -106,26 +116,29 @@ def inputAccountWindow():
         window.mainloop()
 
 def handleSearchButton(window, cmd):
-    result_length = send(cmd)
-    result_length = int(result_length)
+    send(cmd)
+    List = receiveList()
+    print(List)
 
-    resultList = receiveList(result_length)
+    tableList = Text(window, height = 10, width = 150)
+    tableList.pack()
 
-    total_rows = len(resultList)
-    total_columns = len(resultList[0])
+    for i in List:
+        row = str(i)
+        tableList.insert(END, row)
+        tableList.insert(END, "\n")
 
-    for i in range(total_rows):
-        for j in range(total_columns):
-                  
-            table = Entry(root, width = 20)
-                  
-            table.grid(row = i, column = j)
-            table.insert(END, resultList[i][j])
+    continueButton = Button(window, text = "Click here to continue searching", command = lambda: handleContinueButton(window))
+    continueButton.pack()
+    
+def handleContinueButton(window):
+    window.destroy()
+    searchWindow()
 
 def searchWindow():
     window = Tk()
     window.title("Search information of book")
-    window.geometry("500x500")
+    window.geometry("1000x600")
 
     searchLabel = tkinter.Label(window, text="Type here what you want to search: ")
     searchLabel.pack(side = TOP)
@@ -135,9 +148,6 @@ def searchWindow():
 
     searchButton = Button(window, text = "Click here to search", command = lambda: handleSearchButton(window, cmdTextBox.get()))
     searchButton.pack()
-
-    listBox = Listbox()
-    listBox.pack(fill = BOTH)
 
     window.protocol("WM_DELETE_WINDOW", lambda: handleClosing(window))
     window.mainloop()

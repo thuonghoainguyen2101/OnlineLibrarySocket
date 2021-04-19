@@ -8,9 +8,7 @@ server.bind(ADDR)
 #
 def handle_client(conn, addr):
     while True:
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        msg_length = int(msg_length)
-        msg = conn.recv(msg_length).decode(FORMAT)
+        msg = receive(conn)
         print(f"[{addr}] {msg}")
 
         check = False #check if Client log in or sign up succesaful to do the next task
@@ -24,17 +22,12 @@ def handle_client(conn, addr):
             if check:
                 handle_cmd(conn)
         elif msg == DISCONNECT_MESSAGE:
-            conn.send("BYE".encode(FORMAT))
+            send(conn, "BYE")
+            ACTIVE_USERS.remove(conn)
+            conn.close()
 
     ACTIVE_USERS.remove(conn)
     conn.close()
-
-def send(conn, msg):
-    conn.send(msg.encode(FORMAT))
-
-def receive(conn):
-    return 
-
 
 #START
 def start():
@@ -44,22 +37,13 @@ def start():
         conn, addr = server.accept()
         print(f"[NEW CONNECTION] {addr} connected.")
         ACTIVE_USERS.append(conn)
-        print(ACTIVE_USERS)
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")
 
-def sendFile(fileAddr):
-    file = open(fileAddr, 'wb')
-    file_data = s.recv(1024)
-    file.write(file_data)
-    file.close()
-    print("File has been received successfully.")
-
 #main
 #load ACCOUNT 
 load_ACCOUNT(ACCOUNT)
-print(ACCOUNT)
 
 print(f"[STARTING] server is starting...")
 start()

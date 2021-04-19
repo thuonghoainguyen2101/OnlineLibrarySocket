@@ -1,37 +1,37 @@
+# Python program to create a table
+
 from tkinter import *
-from tkinter.ttk import *
-from tkinter import messagebox
-import tkinter
 
 
-def handleSearchButton(cmd):
-    numberOfResult = send(cmd)
-    int(numberOfResult)
-    send("number of result received")
+class Table:
+	
+	def __init__(self,root):
+		
+		# code for creating table
+		for i in range(total_rows):
+			for j in range(total_columns):
+				
+				self.e = Entry(root, width=20, fg='blue',
+							font=('Arial',16,'bold'))
+				
+				self.e.grid(row = i, column = j)
+				self.e.insert(END, lst[i][j])
+    t = Frame(self.e)
+    t.pack()
 
-    result = []
-    for i in range(0, numberOfResult - 1):
-        result.append(send("result received"))
+# take the data
+lst = [(1,'Raj','Mumbai',19),
+	(2,'Aaryan','Pune',18),
+	(3,'Vaishnavi','Mumbai',20),
+	(4,'Rachna','Mumbai',21),
+	(5,'Shubham','Delhi',21)]
 
-def searchWindow():
-    window = Tk()
-    window.title("Search information of book")
-    window.geometry("500x500")
+# find total number of rows and
+# columns in list
+total_rows = len(lst)
+total_columns = len(lst[0])
 
-    searchLabel = tkinter.Label(window, text="Type here what you want to search: ")
-    searchLabel.pack(side = TOP)
-
-    cmdTextBox = Entry(window, width = 100)
-    cmdTextBox.pack(side = TOP, fill = 'x')
-
-    searchButton = Button(window, text = "Click here to search", command = lambda: handleSearchButton(cmdTextBox.get()))
-    searchButton.pack()
-
-    listBox = Listbox()
-    listBox.pack(fill = BOTH)
-
-    window.protocol("WM_DELETE_WINDOW", lambda: handleClosing(window))
-    window.mainloop()
-
-#main
-searchWindow()
+# create root window
+root = Tk()
+t = Table(root)
+root.mainloop()

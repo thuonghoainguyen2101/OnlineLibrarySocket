@@ -1,10 +1,11 @@
 import socket 
 import threading
+import time
 
 from sqlServerConn import *
 
 #define
-HEADER = 64
+HEADER = 2048
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
@@ -16,10 +17,17 @@ ACTIVE_USERS = []
 ACCOUNT = {"admin" : "@@"}
 ACCOUNT_PATH = "D:\SOCKET_PROJ\Server/account.txt"
 
+def send(conn, msg):
+    conn.send(msg.encode(FORMAT))
+
+def receive(conn):
+    res = conn.recv(HEADER).decode(FORMAT)
+    return res
+
 #function to send message to all user
 def sendall(msg):
     for conn in ACTIVE_USERS:
-        conn.send(msg.encode(FORMAT))
+        send(conn, msg)
 
 #function to load data from account file to ACCOUNT
 def load_ACCOUNT(ACCOUNT):
@@ -40,72 +48,64 @@ def load_ACCOUNT(ACCOUNT):
 #LOGIN
 def check_log_in(conn):
     #nhan username va password tu client
-    conn.send("YOU ARE LOGGING IN". encode(FORMAT))
+    send(conn, "YOU ARE LOGGING IN")
     
-    username_length = conn.recv(HEADER).decode(FORMAT)
-    username_length = int (username_length)
-    username = conn.recv(username_length).decode(FORMAT)
+    username = receive(conn)
     print("user: " + username)
-    conn.send("msg received".encode(FORMAT))
     
-    password_length = conn.recv(HEADER).decode(FORMAT)
-    password_length = int (password_length)
-    password = conn.recv(password_length).decode(FORMAT)
+    password = receive(conn)
     print("pass: " + password)
 
     #kiem tra xem co phai tin nhan dong ket noi khong
     if (username != DISCONNECT_MESSAGE and password != DISCONNECT_MESSAGE):
     #kiem tra xem co trong ACCOUNT hay khong
         if username in ACCOUNT and ACCOUNT[username] == password:
-            conn.send("LOG IN SUCCEED".encode(FORMAT))
+            
+            send(conn, "LOG IN SUCCEED")
             return True
         else:
-            conn.send("LOG IN FAILED".encode(FORMAT))
+            send(conn, "LOG IN FAILED")
             return False
-    else: conn.send("BYE".encode(FORMAT))
+    else: 
+        send(conn, "BYE")
+        return False
 
 #SIGNUP
 def check_sign_up(conn):
     #nhan username va password tu client
-    conn.send("YOU ARE SIGNING UP". encode(FORMAT))
+    send(conn, "YOU ARE SIGNING UP")
     
-    username_length = conn.recv(HEADER).decode(FORMAT)
-    username_length = int (username_length)
-    username = conn.recv(username_length).decode(FORMAT)
+    username = receive(conn)
     print("user: " + username)
-    conn.send("msg received".encode(FORMAT))
+    send(conn, "username received, give me password")
     
-    password_length = conn.recv(HEADER).decode(FORMAT)
-    password_length = int (password_length)
-    password = conn.recv(password_length).decode(FORMAT)
+    password = receive(conn)
     print("pass: " + password)
 
     #kiem tra co phai tin nhan dong ket noi khong
-    if (username != DISCONNECT_MESSAGE):
+    if (username != DISCONNECT_MESSAGE and password != DISCONNECT_MESSAGE):
     #kiem tra xem co trong ACCOUNT hay khong
         if username in ACCOUNT:
-            conn.send("SIGN UP FAILED".encode(FORMAT))
+            send(conn, "SIGN UP FAILED")
         else:
             ACCOUNT.update({username : password})
             #add new account into file
             with open(ACCOUNT_PATH, "a") as f: 
                 f.writelines("\n" + username + "\n" + password)
-        conn.send("SIGN UP SUCCEED".encode(FORMAT))
+        send(conn, "SIGN UP SUCCEED")
         return True
     else: 
-        conn.send("BYE".encode(FORMAT))
+        send(conn, "BYE")
         return False
 
 def handle_cmd(conn):
     #receive msg from client
-    cmd_length = conn.recv(HEADER).decode(FORMAT)
-    cmd_length = int(cmd_length)
-    cmd = conn.recv(cmd_length).decode(FORMAT)
-
+    cmd = receive(conn)
+    if cmd == DISCONNECT_MESSAGE:
+        return
+    print("cmd: " + cmd)
     #execute the cmd
     cmd_split = cmd.split(' ')
-
-    result = []
 
     if cmd_split[0] == "F_ID":
         result = selectByID(cmd_split[1])
@@ -116,43 +116,19 @@ def handle_cmd(conn):
     if cmd_split[0] == "F_TYPE":
         result = selectByType(cmd_split[1])
 
-    #send number of result to client
-    temp = result.fetchall()
-    result_length = len(temp)
-    print(result_length)
-    conn.send((str(result_length)).encode(FORMAT))
-    print(result_length)
     #send each row of the result list to client
     for row in result:
-        send_row(conn, row)
-
-#function to send 1 row of result to client
-def send_row(conn, row):
-
-    conn.send((row.ID).encode(FORMAT))
+        print (row)
+        send(conn, row.ID)
+        time.sleep(0.05)
+        send(conn, row.NAMEOFBOOK)
+        time.sleep(0.05)
+        send(conn, row.NAMEOFAUTHOR)
+        time.sleep(0.05)
+        send(conn, str(row.PUBLISHYEAR))
+        time.sleep(0.05)
+        send(conn, row.TYPEOFBOOK)
+    
+    time.sleep(0.05)
+    send(conn, "END OF DATA")
     print("send success")
-
-    cmd_length = conn.recv(HEADER).decode(FORMAT)
-    cmd_length = int(cmd_length)
-    cmd = conn.recv(cmd_length).decode(FORMAT)
-    conn.send((row.NAMEOFBOOK).encode(FORMAT))
-    print("send success")
-
-    cmd_length = conn.recv(HEADER).decode(FORMAT)
-    cmd_length = int(cmd_length)
-    cmd = conn.recv(cmd_length).decode(FORMAT)
-    conn.send((row.NAMEOFAUTHOR).encode(FORMAT))
-    print("send success")
-
-    cmd_length = conn.recv(HEADER).decode(FORMAT)
-    cmd_length = int(cmd_length)
-    cmd = conn.recv(cmd_length).decode(FORMAT)
-    conn.send(str(row.PUBLISHYEAR).encode(FORMAT))
-    print("send success")
-
-    cmd_length = conn.recv(HEADER).decode(FORMAT)
-    cmd_length = int(cmd_length)
-    cmd = conn.recv(cmd_length).decode(FORMAT)
-    conn.send((row.TYPEOFBOOK).encode(FORMAT))
-    print("send success")
-
