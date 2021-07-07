@@ -3,7 +3,8 @@ from tkinter.ttk import *
 from tkinter import messagebox
 import tkinter
 
-from server import *
+from server_support import *
+from sqlServerConn import *
 
 load_ACCOUNT(ACCOUNT)
 
@@ -14,7 +15,7 @@ server.bind(ADDR)
 def handle_client(conn, addr):
     while True:
         msg = receive(conn)
-        print(f"[{addr}] {msg}")
+        #print(f"[{addr}] {msg}")
 
         check = False #check if Client log in or sign up successful to do the next task
 
@@ -49,11 +50,13 @@ def center(toplevel):
 
 def handleClosing(window):
      if messagebox.askokcancel("Quit", "Send disconnect message to all clients?"):
-        sendall(DISCONNECT_MESSAGE)
+        for  conn in ACTIVE_USERS:
+            send(conn, DISCONNECT_MESSAGE)
         window.destroy()
         exit()    
 
 def handleListenButton(window, n):
+    window.destroy()
     notiWindow(n)
 
 def serverWindow():
@@ -79,28 +82,31 @@ def notiWindow(n):
     window.geometry("1000x600")
     center(window)
 
+    global noti
     noti = Text(window, height = 10, width = 150)
     noti.pack(fill = BOTH)
 
-    i = 0
-    print (SERVER)
-    server.bind((SERVER, PORT))
-
     noti.insert(END, f"[LISTENING] Server is listening on {SERVER}\n". format(SERVER = SERVER))
     server.listen()
-    while i < n:
-        i += 1
+    thread = threading.Thread(target = handle_connect, args = (noti,))
+    thread.start()
+
+
+    window.protocol("WM_DELETE_WINDOW", lambda: handleClosing(window))
+    window.mainloop()
+
+    
+    
+def handle_connect(noti):
+    while True:
+        #i += 1
         conn, addr = server.accept()
         noti.insert(END, f"[NEW CONNECTION] {addr} connected.\n")
         ACTIVE_USERS.append(conn)
         thread = threading.Thread(target = handle_client, args = (conn, addr))
         thread.start()
-        noti.insert(END, f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}\n")
-
-    window.protocol("WM_DELETE_WINDOW", lambda: handleClosing(window))
-    window.mainloop()
-    
+        noti.insert(END, f"[ACTIVE CONNECTIONS] {threading.activeCount() - 2}\n")
 
 #main
-thread = threading.Thread(target = serverWindow)
-thread.start()
+serverWindow()
+server.close()

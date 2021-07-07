@@ -2,8 +2,6 @@ import socket
 import threading
 import time
 
-from sqlServerConn import *
-
 #define
 HEADER = 2048
 PORT = 5050
@@ -11,11 +9,14 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
+HOST = socket.gethostname()
 
 ACTIVE_USERS = []
 
 ACCOUNT = {"admin" : "@@"}
-ACCOUNT_PATH = "D:\SOCKET_PROJ\Server/account.txt"
+ACCOUNT_PATH = "D:\\1_19127287_19127568\\Sourrce\\Server\\account.txt"
+
+from sqlServerConn import *
 
 def send(conn, msg):
     conn.send(msg.encode(FORMAT))
@@ -24,10 +25,12 @@ def receive(conn):
     res = conn.recv(HEADER).decode(FORMAT)
     return res
 
-#function to send message to all user
-def sendall(msg):
-    for conn in ACTIVE_USERS:
-        send(conn, msg)
+def sendFile(conn, fileAddr):
+    file = open(fileAddr, 'r', encoding=FORMAT)
+    file_data = file.read()
+    send(conn, file_data)
+    print ("file send success")
+    file.close()
 
 #function to load data from account file to ACCOUNT
 def load_ACCOUNT(ACCOUNT):
@@ -76,9 +79,7 @@ def check_sign_up(conn):
     send(conn, "YOU ARE SIGNING UP")
     
     username = receive(conn)
-    print("user: " + username)
-    send(conn, "username received, give me password")
-    
+    print("user: " + username)    
     password = receive(conn)
     print("pass: " + password)
 
@@ -87,20 +88,20 @@ def check_sign_up(conn):
     #kiem tra xem co trong ACCOUNT hay khong
         if username in ACCOUNT:
             send(conn, "SIGN UP FAILED")
+            return False
         else:
             ACCOUNT.update({username : password})
             #add new account into file
             with open(ACCOUNT_PATH, "a") as f: 
                 f.writelines("\n" + username + "\n" + password)
-        send(conn, "SIGN UP SUCCEED")
-        return True
+            send(conn, "SIGN UP SUCCEED")
+            return True
     else: 
         send(conn, "BYE")
         return False
 
-def handle_cmd(conn):
+def handle_cmd(conn, cmd):
     #receive msg from client
-    cmd = receive(conn)
     if cmd == DISCONNECT_MESSAGE:
         return
     print("cmd: " + cmd)
@@ -116,6 +117,8 @@ def handle_cmd(conn):
     if cmd_split[0] == "F_TYPE":
         result = selectByType(cmd_split[1])
 
+    fileAddr = []
+
     #send each row of the result list to client
     for row in result:
         print (row)
@@ -128,7 +131,37 @@ def handle_cmd(conn):
         send(conn, str(row.PUBLISHYEAR))
         time.sleep(0.05)
         send(conn, row.TYPEOFBOOK)
+
+        fileAddr.append(row.LINK)
     
     time.sleep(0.05)
     send(conn, "END OF DATA")
-    print("send success")
+
+    continue_handle_cmd(conn, fileAddr)
+
+def continue_handle_cmd(conn, fileAddr):
+    cmd = ""
+    while cmd != DISCONNECT_MESSAGE:
+        cmd = receive(conn)
+        print(cmd)
+
+        if cmd[0] == 'F' and cmd[1] == '_':
+            handle_cmd(conn, cmd)
+
+        elif cmd == "VIEW":
+            for addr in fileAddr:
+                print(addr)            
+                sendFile(conn, addr)
+                time.sleep (0.2)
+                print("send success")
+
+        elif cmd == "DOWNLOAD":
+            for addr in fileAddr:
+                nameFile = ""
+                for j in range(len(addr) - 1, 0, -1):
+                    if addr[j] == '\\': break
+                    nameFile = addr[j] + nameFile
+                send(conn, nameFile)
+                print("one punch : " + nameFile)
+                sendFile(conn, addr)
+                print("send success")

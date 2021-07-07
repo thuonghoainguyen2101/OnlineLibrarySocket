@@ -15,13 +15,13 @@ def selectByName(value):
 def selectByType(value):
     conn = connect_to_SQL()
     cursor = conn.cursor()
-    cmd = "SELECT * FROM BOOK WHERE NAMEOFAUTHOR = ?"
+    cmd = "SELECT * FROM BOOK WHERE TYPEOFBOOK = ?"
     return cursor.execute(cmd, value)
 
 def selectByAuthor(value):
     conn = connect_to_SQL()
     cursor = conn.cursor()
-    cmd = "SELECT * FROM BOOK WHERE TYPEOFBOOK = ?"
+    cmd = "SELECT * FROM BOOK WHERE NAMEOFAUTHOR = ?"
     return cursor.execute(cmd, value)
 
 def connect_to_SQL():
@@ -33,22 +33,3 @@ def connect_to_SQL():
             "Trusted_Connection=yes;"
         )
 
-cursor = selectByID("004")
-for row in cursor:
-    print("aaaa")
-    print(row)
-
-cursor = selectByName("Technical Writing For Dummies")
-for row in cursor:
-    print("aaaa")
-    print(row)
-
-cursor = selectByAuthor("Maggie Hamand")
-for row in cursor:
-    print("aaaa")
-    print(row)
-
-cursor = selectByType("STUDY")
-for row in cursor:
-    print("aaaa")
-    print(row)
